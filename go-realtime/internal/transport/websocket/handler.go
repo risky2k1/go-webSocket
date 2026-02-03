@@ -24,8 +24,6 @@ func ServeWS(h *hub.Hub, w http.ResponseWriter, r *http.Request) {
 		Send: make(chan []byte, 256),
 	}
 
-	h.Register <- client
-
 	go writePump(conn, client)
 	go readPump(h, conn, client)
 }

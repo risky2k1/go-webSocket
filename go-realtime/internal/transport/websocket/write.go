@@ -8,10 +8,19 @@ import (
 func writePump(conn *websocket.Conn, client *domain.Client) {
 	defer conn.Close()
 
-	for message := range client.Send {
-		err := conn.WriteMessage(websocket.TextMessage, message)
-		if err != nil {
-			break
+	for {
+		select {
+		case msg, ok := <-client.Send:
+			if !ok {
+				// hub đã close channel
+				_ = conn.WriteMessage(websocket.CloseMessage, []byte{})
+				return
+			}
+
+			err := conn.WriteMessage(websocket.TextMessage, msg)
+			if err != nil {
+				return
+			}
 		}
 	}
 }
