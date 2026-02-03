@@ -35,4 +35,8 @@ return [
         ],
     ],
 
+    'ws' => [
+        'internal_token' => env('WS_INTERNAL_TOKEN'),
+    ],
+
 ];
