@@ -1,13 +1,13 @@
 package websocket
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/gorilla/websocket"
 
 	"go-realtime/internal/domain"
 	"go-realtime/internal/hub"
-	"go-realtime/internal/service"
 )
 
 var upgrader = websocket.Upgrader{
@@ -15,28 +15,32 @@ var upgrader = websocket.Upgrader{
 }
 
 func ServeWS(h *hub.Hub, w http.ResponseWriter, r *http.Request) {
-	token := r.URL.Query().Get("token")
-	if token == "" {
-		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+	// Simple auth: Lấy user_id từ query string
+	userIDStr := r.URL.Query().Get("user_id")
+	if userIDStr == "" {
+		http.Error(w, "Missing user_id", http.StatusBadRequest)
 		return
 	}
 
-	user, err := service.VerifyToken(token)
-	if err != nil {
-		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+	// Convert user_id to int64
+	var userID int64
+	_, err := fmt.Sscanf(userIDStr, "%d", &userID)
+	if err != nil || userID <= 0 {
+		http.Error(w, "Invalid user_id", http.StatusBadRequest)
 		return
 	}
 
+	// Upgrade to WebSocket
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		return
 	}
 
+	// Create client
 	client := &domain.Client{
-		ID:   r.RemoteAddr,
-		Token: token,
-		UserID: user.ID,
-		Send: make(chan []byte, 256),
+		ID:     r.RemoteAddr,
+		UserID: userID,
+		Send:   make(chan []byte, 256),
 	}
 
 	h.Register <- client

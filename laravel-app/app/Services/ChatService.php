@@ -62,17 +62,17 @@ class ChatService
             $meta
         ) {
             $message = Message::create([
-                'conversation_id' => $conversation->id,
-                'user_id'         => $sender->id,
-                'type'            => $type,
-                'content'         => $content,
-                'meta'            => $meta,
+                'chat_conversation_id' => $conversation->id,
+                'user_id' => $sender->id,
+                'type' => $type,
+                'content' => $content,
+                'meta' => $meta,
             ]);
 
             // update last_read cho sender
             $conversation->users()->updateExistingPivot(
                 $sender->id,
-                ['last_read_message_id' => $message->id]
+                ['last_read_at' => now()]
             );
 
             return $message;
@@ -135,15 +135,13 @@ class ChatService
      */
     public function getMessages(
         Conversation $conversation,
-        int $limit = 30
+        int $limit = 50
     ) {
         return $conversation->messages()
             ->with('sender:id,name')
-            ->latest()
+            ->orderBy('created_at', 'asc')
             ->limit($limit)
-            ->get()
-            ->reverse()
-            ->values();
+            ->get();
     }
 
     /**
@@ -153,19 +151,29 @@ class ChatService
         Conversation $conversation,
         Message $message
     ): void {
+        // Load sender nếu chưa có
+        if (! $message->relationLoaded('sender')) {
+            $message->load('sender:id,name');
+        }
+
         Redis::publish(
             "chat.message.{$conversation->id}",
             json_encode([
                 'event' => 'message.sent',
+                'conversation_id' => $conversation->id, // Thêm ở top level để parser dễ đọc
                 'data' => [
                     'conversation_id' => $conversation->id,
                     'message' => [
-                        'id'         => $message->id,
-                        'user_id'    => $message->user_id,
-                        'content'    => $message->content,
-                        'type'       => $message->type,
-                        'meta'       => $message->meta,
-                        'created_at'=> $message->created_at->toISOString(),
+                        'id' => $message->id,
+                        'user_id' => $message->user_id,
+                        'content' => $message->content,
+                        'type' => $message->type,
+                        'meta' => $message->meta,
+                        'created_at' => $message->created_at->toISOString(),
+                        'sender' => [
+                            'id' => $message->sender->id,
+                            'name' => $message->sender->name,
+                        ],
                     ],
                 ],
             ])

@@ -2,10 +2,12 @@ package websocket
 
 import (
 	"encoding/json"
+	"log"
+
 	"github.com/gorilla/websocket"
+
 	"go-realtime/internal/domain"
 	"go-realtime/internal/hub"
-	"go-realtime/internal/service"
 )
 
 func readPump(h *hub.Hub, conn *websocket.Conn, client *domain.Client) {
@@ -23,31 +25,49 @@ func readPump(h *hub.Hub, conn *websocket.Conn, client *domain.Client) {
 		var msg IncomingMessage
 		err = json.Unmarshal(message, &msg)
 		if err != nil {
+			log.Printf("Error unmarshaling message: %v", err)
 			continue
 		}
 
 		switch msg.Event {
-		case "join":
-			if msg.ConversationID == "" {
+		case "subscribe", "join":
+			// Client muốn subscribe vào một conversation
+			conversationID := msg.GetConversationID()
+			if conversationID == "" {
 				continue
 			}
+
+			log.Printf("User %d subscribing to conversation %s", client.UserID, conversationID)
 
 			h.Join <- &hub.JoinRoom{
-				Client: client,
-				ConversationID: msg.ConversationID,
+				Client:         client,
+				ConversationID: conversationID,
 			}
-		case "message":
-			if client.ConversationID == "" || msg.Content == "" {
+
+		case "typing":
+			// Client đang typing
+			if client.ConversationID == "" {
 				continue
 			}
 
-			go service.PersistMessage(client, msg.Content)
+			log.Printf("User %d typing in conversation %s", client.UserID, client.ConversationID)
+
+			// Broadcast typing event đến những người khác trong room
+			typingMsg := map[string]interface{}{
+				"event":           "typing",
+				"conversation_id": client.ConversationID,
+				"user_id":         client.UserID,
+			}
+
+			typingBytes, _ := json.Marshal(typingMsg)
 
 			h.Broadcast <- hub.RoomMessage{
 				ConversationID: client.ConversationID,
-				Message:        message,
+				Message:        typingBytes,
 			}
+
 		default:
+			log.Printf("Unknown event: %s", msg.Event)
 			continue
 		}
 	}

@@ -31,7 +31,7 @@ class Conversation extends Model
      */
     public function messages(): HasMany
     {
-        return $this->hasMany(Message::class);
+        return $this->hasMany(Message::class, 'chat_conversation_id');
     }
 
     /**
@@ -39,7 +39,7 @@ class Conversation extends Model
      */
     public function lastMessage()
     {
-        return $this->hasOne(Message::class)->latestOfMany();
+        return $this->hasOne(Message::class, 'chat_conversation_id')->latestOfMany();
     }
 
     public function isGroup(): bool

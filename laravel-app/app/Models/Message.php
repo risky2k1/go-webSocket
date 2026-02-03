@@ -27,7 +27,7 @@ class Message extends Model
      */
     public function conversation(): BelongsTo
     {
-        return $this->belongsTo(Conversation::class);
+        return $this->belongsTo(Conversation::class, 'chat_conversation_id');
     }
 
     /**
