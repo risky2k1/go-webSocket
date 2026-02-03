@@ -9,6 +9,9 @@ RUN apt-get update && apt-get install -y \
     && usermod -u ${WWWUSER} www-data \
     && groupmod -g ${WWWGROUP} www-data
 
+RUN pecl install redis \
+    && docker-php-ext-enable redis
+    
 RUN mkdir -p /var/log/supervisor \
     && chown -R www-data:www-data /var/log/supervisor
 
