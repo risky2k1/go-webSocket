@@ -2,5 +2,6 @@ package websocket
 
 type IncomingMessage struct {
     Event          string `json:"event"`
-    ConversationID string `json:"conversation_id"`
+    ConversationID string `json:"conversation_id,omitempty"`
+    Content        string `json:"content,omitempty"`
 }

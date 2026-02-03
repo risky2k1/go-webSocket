@@ -4,6 +4,7 @@ import "go-realtime/internal/domain"
 
 type Hub struct {
 	Rooms      map[string]map[*domain.Client]bool
+	Users      map[int64]map[*domain.Client]bool
 	Register   chan *domain.Client
 	Unregister chan *domain.Client
 	Broadcast  chan RoomMessage
@@ -14,7 +15,8 @@ type Hub struct {
 func NewHub() *Hub {
 	return &Hub{
 		Rooms:      make(map[string]map[*domain.Client]bool),
-		// Register:   make(chan *domain.Client),
+		Users:      make(map[int64]map[*domain.Client]bool),
+		Register:   make(chan *domain.Client),
 		Unregister: make(chan *domain.Client),
 		Broadcast:  make(chan RoomMessage),
 		Join:       make(chan *JoinRoom),
@@ -25,10 +27,17 @@ func (h *Hub) Run() {
 	for {
 		select {
 
-		// case client := <-h.Register:
-		// 	h.Clients[client] = true
+		case client := <-h.Register:
+			userID := client.UserID
+		
+			if _, ok := h.Users[userID]; !ok {
+				h.Users[userID] = make(map[*domain.Client]bool)
+			}
+		
+			h.Users[userID][client] = true
 
 		case client := <-h.Unregister:
+			// cleanup room (đã có)
 			roomID := client.ConversationID
 			if roomID != "" {
 				if roomClients, ok := h.Rooms[roomID]; ok {
@@ -38,6 +47,16 @@ func (h *Hub) Run() {
 					}
 				}
 			}
+		
+			// cleanup user
+			userID := client.UserID
+			if userClients, ok := h.Users[userID]; ok {
+				delete(userClients, client)
+				if len(userClients) == 0 {
+					delete(h.Users, userID)
+				}
+			}
+		
 			close(client.Send)
 
 		case msg := <-h.Broadcast:
@@ -96,4 +115,15 @@ type RoomMessage struct {
 type ChatMessage struct {
     Event   string `json:"event"`
     Content string `json:"content"`
+}
+
+type OutgoingMessage struct {
+    Event string      `json:"event"`
+    Data  interface{} `json:"data"`
+}
+
+type PersistMessagePayload struct {
+    ConversationID string `json:"conversation_id"`
+    SenderID       int64  `json:"sender_id"`
+    Content        string `json:"content"`
 }

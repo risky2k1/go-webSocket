@@ -61,6 +61,8 @@ services:
     networks: [app-net]
 
   go-realtime:
+    env_file:
+      - ./go-realtime/.env
     build: ./go-realtime
     ports:
       - "6001:6001"

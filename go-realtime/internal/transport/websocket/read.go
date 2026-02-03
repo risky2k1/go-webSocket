@@ -5,6 +5,7 @@ import (
 	"github.com/gorilla/websocket"
 	"go-realtime/internal/domain"
 	"go-realtime/internal/hub"
+	"go-realtime/internal/service"
 )
 
 func readPump(h *hub.Hub, conn *websocket.Conn, client *domain.Client) {
@@ -25,23 +26,29 @@ func readPump(h *hub.Hub, conn *websocket.Conn, client *domain.Client) {
 			continue
 		}
 
-		if msg.Event == "join" {
+		switch msg.Event {
+		case "join":
+			if msg.ConversationID == "" {
+				continue
+			}
+
 			h.Join <- &hub.JoinRoom{
 				Client: client,
 				ConversationID: msg.ConversationID,
 			}
-			continue
-		}
-
-		if msg.Event == "message" {
-			if client.ConversationID == "" {
+		case "message":
+			if client.ConversationID == "" || msg.Content == "" {
 				continue
 			}
-		
+
+			go service.PersistMessage(client, msg.Content)
+
 			h.Broadcast <- hub.RoomMessage{
 				ConversationID: client.ConversationID,
 				Message:        message,
 			}
+		default:
+			continue
 		}
 	}
 }

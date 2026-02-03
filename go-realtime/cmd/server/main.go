@@ -6,9 +6,15 @@ import (
 
 	"go-realtime/internal/hub"
 	ws "go-realtime/internal/transport/websocket"
+	"github.com/joho/godotenv"
 )
 
 func main() {
+	err := godotenv.Load()
+	if err != nil {
+		log.Fatal("Error loading .env file")
+	}
+
 	h := hub.NewHub()
 	go h.Run()
 
