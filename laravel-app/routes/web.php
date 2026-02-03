@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Chat\ChatController;
 use App\Http\Controllers\Settings;
 use Illuminate\Support\Facades\Route;
 
@@ -18,6 +19,13 @@ Route::middleware(['auth'])->group(function () {
     Route::get('settings/password', [Settings\PasswordController::class, 'edit'])->name('settings.password.edit');
     Route::put('settings/password', [Settings\PasswordController::class, 'update'])->name('settings.password.update');
     Route::get('settings/appearance', [Settings\AppearanceController::class, 'edit'])->name('settings.appearance.edit');
+
+    Route::group([
+        'prefix' => 'chat',
+        'as' => 'chat.'
+    ], function () {
+        Route::get('/', [ChatController::class, 'index'])->name('index');
+    });
 });
 
 require __DIR__.'/auth.php';
