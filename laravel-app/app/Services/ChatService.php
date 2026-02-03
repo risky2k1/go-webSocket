@@ -156,27 +156,34 @@ class ChatService
             $message->load('sender:id,name');
         }
 
-        Redis::publish(
-            "chat.message.{$conversation->id}",
-            json_encode([
-                'event' => 'message.sent',
-                'conversation_id' => $conversation->id, // Thêm ở top level để parser dễ đọc
-                'data' => [
-                    'conversation_id' => $conversation->id,
-                    'message' => [
-                        'id' => $message->id,
-                        'user_id' => $message->user_id,
-                        'content' => $message->content,
-                        'type' => $message->type,
-                        'meta' => $message->meta,
-                        'created_at' => $message->created_at->toISOString(),
-                        'sender' => [
-                            'id' => $message->sender->id,
-                            'name' => $message->sender->name,
-                        ],
+        $channel = "chat.message.{$conversation->id}";
+        $payload = json_encode([
+            'event' => 'message.sent',
+            'conversation_id' => $conversation->id, // Thêm ở top level để parser dễ đọc
+            'data' => [
+                'conversation_id' => $conversation->id,
+                'message' => [
+                    'id' => $message->id,
+                    'user_id' => $message->user_id,
+                    'content' => $message->content,
+                    'type' => $message->type,
+                    'meta' => $message->meta,
+                    'created_at' => $message->created_at->toISOString(),
+                    'sender' => [
+                        'id' => $message->sender->id,
+                        'name' => $message->sender->name,
                     ],
                 ],
-            ])
-        );
+            ],
+        ]);
+
+        \Log::info("📤 Publishing to Redis", [
+            'channel' => $channel,
+            'payload_length' => strlen($payload),
+        ]);
+
+        Redis::publish($channel, $payload);
+
+        \Log::info("✅ Published to Redis successfully");
     }
 }

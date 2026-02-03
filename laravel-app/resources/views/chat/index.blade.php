@@ -242,16 +242,24 @@
                 typingTimeout: null,
 
                 init() {
-                    // Tự động chọn conversation đầu tiên (nếu có)
-                    if (this.conversations.length > 0) {
-                        this.selectConversation(this.conversations[0].id);
-                    }
-                    
-                    // Kết nối WebSocket
+                    // Kết nối WebSocket TRƯỚC
                     this.connectWebSocket();
+                    
+                    // Tự động chọn conversation đầu tiên (nếu có)
+                    // Delay một chút để WebSocket có thời gian connect
+                    if (this.conversations.length > 0) {
+                        setTimeout(() => {
+                            this.selectConversation(this.conversations[0].id);
+                        }, 500);
+                    }
                 },
 
                 async selectConversation(conversationId) {
+                    // Nếu đã chọn conversation này rồi thì không làm gì
+                    if (this.selectedConversationId === conversationId && this.messages.length > 0) {
+                        return;
+                    }
+
                     this.selectedConversationId = conversationId;
                     this.selectedConversation = this.conversations.find(c => c.id === conversationId);
                     
@@ -293,6 +301,8 @@
                     this.messageInput = '';
                     this.sending = true;
 
+                    console.log('💬 Sending message:', content);
+
                     try {
                         const response = await fetch(`/chat/conversations/${this.selectedConversationId}/messages`, {
                             method: 'POST',
@@ -306,22 +316,30 @@
                             }),
                         });
 
+                        console.log('📡 Response status:', response.status);
+
                         if (!response.ok) {
+                            const errorData = await response.json();
+                            console.error('❌ Error response:', errorData);
                             throw new Error('Failed to send message');
                         }
 
                         const data = await response.json();
+                        console.log('✅ Message sent:', data);
                         
                         // Message sẽ được nhận qua WebSocket, không cần push thủ công
                         // Nhưng nếu chưa có WS, có thể push tạm
                         if (!this.wsConnected) {
+                            console.log('⚠️ WebSocket not connected, adding message manually');
                             this.messages.push(data.message);
                             this.$nextTick(() => {
                                 this.scrollToBottom();
                             });
+                        } else {
+                            console.log('⏳ Waiting for WebSocket broadcast...');
                         }
                     } catch (error) {
-                        console.error('Error sending message:', error);
+                        console.error('❌ Error sending message:', error);
                         alert('Không thể gửi tin nhắn. Vui lòng thử lại.');
                         // Restore message input
                         this.messageInput = content;
@@ -384,27 +402,38 @@
 
                 subscribeToConversation(conversationId) {
                     if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+                        console.log('📡 Subscribing to conversation:', conversationId);
                         this.ws.send(JSON.stringify({
                             event: 'subscribe',
                             conversation_id: conversationId,
                         }));
+                    } else {
+                        console.warn('⚠️ Cannot subscribe - WebSocket not ready');
                     }
                 },
 
                 handleWebSocketMessage(data) {
+                    console.log('📨 WebSocket message received:', data);
+
                     switch (data.event) {
                         case 'message.sent':
+                            console.log('💬 New message event');
                             // Nhận tin nhắn mới
                             if (data.data.conversation_id === this.selectedConversationId) {
                                 const message = data.data.message;
                                 
                                 // Kiểm tra xem message đã tồn tại chưa (tránh duplicate)
                                 if (!this.messages.find(m => m.id === message.id)) {
+                                    console.log('➕ Adding message to list:', message);
                                     this.messages.push(message);
                                     this.$nextTick(() => {
                                         this.scrollToBottom();
                                     });
+                                } else {
+                                    console.log('⚠️ Message already exists, skipping');
                                 }
+                            } else {
+                                console.log('⚠️ Message for different conversation');
                             }
                             
                             // Cập nhật lastMessage trong conversation list
@@ -412,9 +441,11 @@
                             break;
                             
                         case 'typing':
+                            console.log('⌨️ Typing event');
                             // Nhận typing indicator
                             if (data.conversation_id === this.selectedConversationId && 
                                 data.user_id !== this.currentUserId) {
+                                console.log('👀 Showing typing indicator');
                                 this.isTyping = true;
                                 
                                 // Clear previous timeout
@@ -425,9 +456,13 @@
                                 // Hide after 2 seconds
                                 this.typingTimeout = setTimeout(() => {
                                     this.isTyping = false;
+                                    console.log('🙈 Hiding typing indicator');
                                 }, 2000);
                             }
                             break;
+
+                        default:
+                            console.log('⚠️ Unknown event:', data.event);
                     }
                 },
 
