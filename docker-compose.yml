@@ -45,6 +45,15 @@ services:
     #   - "3306:3306"
     networks: [app-net]
 
+  adminer:
+    image: adminer:latest
+    restart: unless-stopped
+    ports:
+      - "8081:8080"
+    depends_on:
+      - mysql
+    networks: [app-net]
+
   redis:
     image: redis:7
     # ports:
