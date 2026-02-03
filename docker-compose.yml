@@ -1,0 +1,75 @@
+services:
+  nginx:
+    build: ./laravel-app/.docker/nginx
+    ports:
+      - "8080:80"
+    volumes:
+      - ./laravel-app:/var/www/html
+    depends_on:
+      - php
+    networks: [app-net]
+
+  php:
+    build:
+      context: ./laravel-app/.docker/php
+      args:
+        WWWUSER: 1001
+        WWWGROUP: 1001
+    volumes:
+      - ./laravel-app:/var/www/html
+    depends_on:
+      - mysql
+      - redis
+    networks: [app-net]
+
+  supervisor:
+    build: ./laravel-app/.docker/php
+    command: supervisord -c /etc/supervisor/conf.d/laravel-worker.conf
+    volumes:
+      - ./laravel-app:/var/www/html
+      - ./laravel-app/.docker/supervisor:/etc/supervisor/conf.d
+    depends_on:
+      - php
+    networks: [app-net]
+
+  mysql:
+    image: mysql:8.0
+    environment:
+      MYSQL_DATABASE: laravel_app
+      MYSQL_USER: laravel
+      MYSQL_PASSWORD: laravel
+      MYSQL_ROOT_PASSWORD: root
+    volumes:
+      - ./data/mysql:/var/lib/mysql
+    # ports:
+    #   - "3306:3306"
+    networks: [app-net]
+
+  adminer:
+    image: adminer:latest
+    restart: unless-stopped
+    ports:
+      - "8081:8080"
+    depends_on:
+      - mysql
+    networks: [app-net]
+
+  redis:
+    image: redis:7
+    # ports:
+    #   - "6379:6379"
+    networks: [app-net]
+
+  go-realtime:
+    env_file:
+      - ./go-realtime/.env
+    build: ./go-realtime
+    ports:
+      - "6001:6001"
+    depends_on:
+      - redis
+    networks: [app-net]
+
+networks:
+  app-net:
+    driver: bridge
