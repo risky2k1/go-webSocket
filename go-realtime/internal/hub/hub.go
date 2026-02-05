@@ -65,6 +65,11 @@ func (h *Hub) Run() {
 				break
 			}
 			for client := range roomClients {
+				// Skip the excluded client (e.g., sender of typing event)
+				if msg.ExcludeClient != nil && client == msg.ExcludeClient {
+					continue
+				}
+				
 				select {
 				case client.Send <- msg.Message:
 				default:
@@ -110,6 +115,7 @@ type JoinRoom struct {
 type RoomMessage struct {
     ConversationID string
     Message        []byte
+    ExcludeClient  *domain.Client // Don't send to this client (e.g., sender of typing event)
 }
 
 type ChatMessage struct {

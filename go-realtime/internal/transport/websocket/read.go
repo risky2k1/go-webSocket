@@ -64,6 +64,7 @@ func readPump(h *hub.Hub, conn *websocket.Conn, client *domain.Client) {
 			h.Broadcast <- hub.RoomMessage{
 				ConversationID: client.ConversationID,
 				Message:        typingBytes,
+				ExcludeClient:  client, // Don't send typing event back to sender
 			}
 
 		default:
