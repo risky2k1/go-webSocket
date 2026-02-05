@@ -31,6 +31,6 @@ func main() {
 		ws.ServeWS(h, w, r)
 	})
 
-	log.Println("🚀 Go Realtime Server v2 (Wildcard Fix) running on :6001")
+	log.Println("🚀 Go Realtime Server running on :6001")
 	log.Fatal(http.ListenAndServe(":6001", nil))
 }

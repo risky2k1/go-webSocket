@@ -3,7 +3,6 @@ package redis
 import (
 	"encoding/json"
 	"fmt"
-	"log"
 )
 
 func extractConversationID(payload string) string {
@@ -12,17 +11,13 @@ func extractConversationID(payload string) string {
 	
 	err := json.Unmarshal([]byte(payload), &data)
 	if err != nil {
-		log.Printf("❌ Failed to parse JSON payload: %v", err)
 		return ""
 	}
-	
-	log.Printf("🔍 Parsing payload: %s", payload)
 	
 	// Try top level conversation_id first
 	if convID, ok := data["conversation_id"]; ok {
 		result := convertToString(convID)
 		if result != "" {
-			log.Printf("✅ Found conversation_id at top level: %s", result)
 			return result
 		}
 	}
@@ -32,13 +27,11 @@ func extractConversationID(payload string) string {
 		if convID, ok := dataObj["conversation_id"]; ok {
 			result := convertToString(convID)
 			if result != "" {
-				log.Printf("✅ Found conversation_id in data: %s", result)
 				return result
 			}
 		}
 	}
 	
-	log.Printf("⚠️  No conversation_id found in payload")
 	return ""
 }
 
