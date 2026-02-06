@@ -13,7 +13,7 @@ import (
 
 func main() {
 	if err := godotenv.Load(); err != nil {
-		log.Println("⚠️  .env not found, using system env")
+		log.Println(".env not found, using system env")
 	}
 
 	// 1. Create hub
@@ -31,6 +31,6 @@ func main() {
 		ws.ServeWS(h, w, r)
 	})
 
-	log.Println("🚀 Go Realtime Server running on :6001")
+	log.Println("Go Realtime Server running on :6001")
 	log.Fatal(http.ListenAndServe(":6001", nil))
 }
