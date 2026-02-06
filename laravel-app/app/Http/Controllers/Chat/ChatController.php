@@ -34,15 +34,8 @@ class ChatController extends Controller
 
     public function sendMessage(Request $request, Conversation $conversation, ChatService $chatService)
     {
-        \Log::info("💬 Sending message", [
-            'conversation_id' => $conversation->id,
-            'user_id' => Auth::id(),
-        ]);
-
         // Verify user is part of conversation
         if (! $conversation->users()->where('user_id', Auth::id())->exists()) {
-            \Log::warning("⛔ Unauthorized message attempt");
-
             return response()->json(['message' => 'Unauthorized'], 403);
         }
 
@@ -58,9 +51,7 @@ class ChatController extends Controller
 
         // Load sender relation
         $message->load('sender:id,name');
-
-        \Log::info("✅ Message sent successfully", ['message_id' => $message->id]);
-
+        
         return response()->json([
             'message' => $message,
         ]);
