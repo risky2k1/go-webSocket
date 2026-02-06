@@ -7,18 +7,14 @@
     </div>
 
 
-    <!-- Chat Container: 2 cột với danh sách chat bên trái và khu vực chat bên phải -->
     <div class="flex gap-4 h-[calc(100vh-180px)]" x-data='chatApp(@json($conversations), {{ auth()->id() }})'
         x-init="init()">
-        <!-- Left Sidebar: Danh sách các cuộc hội thoại -->
         <div
             class="w-80 bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 flex flex-col">
-            <!-- Header danh sách chat -->
             <div class="p-4 border-b border-gray-200 dark:border-gray-700">
                 <h2 class="text-lg font-semibold text-gray-800 dark:text-gray-100">{{ __('Conversations') }}</h2>
             </div>
 
-            <!-- Danh sách các cuộc hội thoại -->
             <div class="flex-1 overflow-y-auto custom-scrollbar">
                 <ul>
                     <template x-for="conv in conversations" :key="conv.id">
@@ -59,7 +55,6 @@
                 </ul>
             </div>
 
-            <!-- Footer: Nút tạo cuộc hội thoại mới -->
             <div class="p-4 border-t border-gray-200 dark:border-gray-700">
                 <button
                     class="w-full bg-blue-500 hover:bg-blue-600 text-white font-medium px-4 py-2.5 rounded-lg shadow-sm transition-colors">
@@ -68,11 +63,9 @@
             </div>
         </div>
 
-        <!-- Right Section: Khu vực chat -->
         <div
             class="flex-1 bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 flex flex-col">
 
-            <!-- Empty state: Chưa chọn conversation -->
             <template x-if="!selectedConversation">
                 <div class="flex-1 flex items-center justify-center text-gray-500 dark:text-gray-400">
                     <div class="text-center">
@@ -82,10 +75,8 @@
                 </div>
             </template>
 
-            <!-- Chat area: Khi đã chọn conversation -->
             <template x-if="selectedConversation">
                 <div class="flex-1 flex flex-col">
-                    <!-- Chat Header: Thông tin người/nhóm chat -->
                     <div class="border-b border-gray-200 dark:border-gray-700 p-4 bg-gray-50 dark:bg-gray-900/50">
                         <div class="flex items-center gap-3">
                             <div :class="selectedConversation.type === 'group' ?
@@ -116,11 +107,9 @@
                         </div>
                     </div>
 
-                    <!-- Chat Body: Khu vực hiển thị tin nhắn -->
                     <div class="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50 dark:bg-gray-900 custom-scrollbar"
                         x-ref="messagesContainer">
 
-                        <!-- Loading messages -->
                         <template x-if="loadingMessages">
                             <div class="flex items-center justify-center h-full">
                                 <div class="text-gray-500 dark:text-gray-400">
@@ -130,14 +119,12 @@
                             </div>
                         </template>
 
-                        <!-- Messages list -->
                         <template x-if="!loadingMessages">
                             <div>
                                 <template x-for="message in messages" :key="message.id">
                                     <div :class="message.user_id === currentUserId ? 'flex justify-end' : 'flex justify-start'"
                                         class="mb-4">
 
-                                        <!-- Tin nhắn của người khác (bên trái) -->
                                         <template x-if="message.user_id !== currentUserId">
                                             <div class="max-w-[70%]">
                                                 <div class="flex items-end gap-2 mb-1">
@@ -162,7 +149,6 @@
                                             </div>
                                         </template>
 
-                                        <!-- Tin nhắn của bạn (bên phải) -->
                                         <template x-if="message.user_id === currentUserId">
                                             <div class="max-w-[70%]">
                                                 <div
@@ -178,7 +164,6 @@
                                     </div>
                                 </template>
 
-                                <!-- Empty messages -->
                                 <template x-if="messages.length === 0">
                                     <div
                                         class="flex items-center justify-center h-full text-gray-500 dark:text-gray-400">
@@ -189,7 +174,6 @@
                         </template>
                     </div>
 
-                    <!-- Chat Input: Khu vực nhập tin nhắn -->
                     <div class="border-t border-gray-200 dark:border-gray-700 p-4 bg-white dark:bg-gray-800">
                         <form @submit.prevent="sendMessage" class="flex items-center gap-2">
                             <button type="button"

@@ -12,19 +12,19 @@ class WsMessageController extends Controller
 {
     public function store(Request $request)
     {
-        // 1️⃣ Verify internal token
+        // Verify internal token
         if ($request->header('X-Internal-Token') !== config('services.ws.internal_token')) {
             return response()->json(['message' => 'Unauthorized'], Response::HTTP_UNAUTHORIZED);
         }
 
-        // 2️⃣ Validate payload từ Go
+        // Validate payload từ Go
         $data = $request->validate([
             'conversation_id' => ['required', 'integer'],
             'sender_id'       => ['required', 'integer'],
             'content'         => ['required', 'string'],
         ]);
 
-        // 3️⃣ Lưu chat_messages
+        // Lưu chat_messages
         $message = Message::create([
             'chat_conversation_id' => $data['conversation_id'],
             'user_id'              => $data['sender_id'],
@@ -33,7 +33,7 @@ class WsMessageController extends Controller
             'meta'                 => null,
         ]);
 
-        // 4️⃣ Push event realtime sang Golang (Redis pub/sub)
+        // Push event realtime sang Golang (Redis pub/sub)
         Redis::publish('chat.messages', json_encode([
             'conversation_id' => $data['conversation_id'],
             'id' => $message->id,

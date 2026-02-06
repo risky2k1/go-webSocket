@@ -177,13 +177,6 @@ class ChatService
             ],
         ]);
 
-        \Log::info("📤 Publishing to Redis", [
-            'channel' => $channel,
-            'payload_length' => strlen($payload),
-        ]);
-
         Redis::publish($channel, $payload);
-
-        \Log::info("✅ Published to Redis successfully");
     }
 }
